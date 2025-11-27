@@ -1,0 +1,10 @@
+pandas
+numpy
+scikit-learn
+fastapi
+uvicorn
+mlflow
+pydantic>=2.0
+pytest
+python-dotenv
+loguru
