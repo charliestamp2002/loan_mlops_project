@@ -1,0 +1,38 @@
+data:
+  approval:
+    target_column: "LoanApproved"
+    positive_class: 1
+    numeric_features: 
+      - "Age"
+      - "AnnualIncome"
+      - "CreditScore"
+    categorical_features: 
+      - "EmploymentStatus"
+      - "MaritalStatus"
+      - "EducationLevel"
+  default: 
+    target_column: "Default"
+    positive_class: 1
+    numeric_features:
+      - "Age"
+      - "LoanAmount"
+      - "CreditScore"
+    categorical_features: 
+      - "Education"
+      - "EmploymentType"
+      - "MaritalStatus"
+
+model:
+  approval:
+    test_size: 0.2
+    random_state: 42
+    classifier_type: "logreg"           # could later support "rf", etc.
+  default:
+    test_size: 0.2
+    random_state: 42
+    classifier_type: "logreg"
+
+    
+
+
+
