@@ -10,7 +10,7 @@ data:
       - "EmploymentStatus"
       - "MaritalStatus"
       - "EducationLevel"
-      
+
   default: 
     target_column: "Default"
     positive_class: 1
@@ -32,6 +32,11 @@ model:
     test_size: 0.2
     random_state: 42
     classifier_type: "logreg"
+
+decision:
+  approval_threshold: 0.6
+  high_risk_default_threshold: 0.5
+  low_risk_default_threshold: 0.2
 
     
 

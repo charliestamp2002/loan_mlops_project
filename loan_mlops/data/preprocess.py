@@ -22,7 +22,12 @@ def build_preprocessing_pipeline(
     )
     categorical_transformer = Pipeline(
         steps=[
-            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+            ("onehot", 
+             OneHotEncoder(
+                handle_unknown="ignore",
+                sparse_output=False,
+                )
+            )
         ]
     )
     preprocessor = ColumnTransformer(

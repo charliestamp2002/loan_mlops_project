@@ -2,6 +2,7 @@ from loan_mlops.data.default_inference import predict_default_proba
 from loan_mlops.data.approval_inference import predict_approval_proba
 
 from loan_mlops.data.load_data import load_approval_data, load_default_data
+from loan_mlops.decision.engine import make_decision
 
 df_approval = load_approval_data()
 # print(df_approval.columns)
@@ -50,3 +51,9 @@ default_example_applicant = {
 
 print(f"Probability prediction of one applicant (Approval): {predict_approval_proba(approval_example_applicant)}")
 print(f"Probability prediction of one applicant (Approval): {predict_default_proba(default_example_applicant)}")
+
+approval_example = approval_three_rows.iloc[0].to_dict()
+default_example = default_three_rows.iloc[0].to_dict()
+
+decision = make_decision(approval_example, default_example) 
+print(f"Decision result for one applicant: {decision}")

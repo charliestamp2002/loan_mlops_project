@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 import yaml
+import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, classification_report, accuracy_score
@@ -11,6 +12,8 @@ from loan_mlops.data.load_data import load_approval_data
 from loan_mlops.data.preprocess import (
     build_preprocessing_pipeline,
     split_features_target)
+from loan_mlops.utils.paths import APPROVAL_MODEL_FILE
+
 
 def load_config(config_path: str = "loan_mlops/config/base_config.yaml") -> Dict[str, Any]:
     
@@ -59,6 +62,9 @@ def train_baseline_approval() -> None:
     )
 
     pipe.fit(X_train,y_train)
+
+    joblib.dump(pipe, APPROVAL_MODEL_FILE)
+    print(f"Saved baseline approval model to {APPROVAL_MODEL_FILE}")
 
     y_prob = pipe.predict_proba(X_test)[:,1]
     y_pred = [1 if prob >= 0.5 else 0 for prob in y_prob]

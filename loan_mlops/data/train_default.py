@@ -1,9 +1,13 @@
 from typing import Dict, Any
 
+import mlflow
+import mlflow.sklearn
+
 import yaml
+import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score, classification_report, accuracy_score
+from sklearn.metrics import roc_auc_score, classification_report, accuracy_score, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
@@ -13,6 +17,7 @@ from loan_mlops.data.load_data import load_default_data
 from loan_mlops.data.preprocess import (
     build_preprocessing_pipeline,
     split_features_target)
+from loan_mlops.utils.paths import DEFAULT_MODEL_FILE
 
 def load_config(config_path: str = "loan_mlops/config/base_config.yaml") -> Dict[str, Any]:
     
@@ -56,6 +61,12 @@ def train_baseline_default() -> None:
     data_cfg = config["data"]["default"]
     model_cfg = config["model"]["default"]
 
+    # MLflow setup
+    mlflow.set_tracking_uri(
+    "file:///Users/charliestamp/Documents/loan_mlops_project/mlruns"
+    )
+    mlflow.set_experiment("loan_default_experiments")
+
     df = load_default_data()
 
     cols_needed = ( 
@@ -87,7 +98,7 @@ def train_baseline_default() -> None:
             )
     
     pipe = process_pipeline(
-        type_of_pipeline = "smote",
+        type_of_pipeline = "not_smote",
         model_cfg = model_cfg,
         X_train = X_train,
         y_train = y_train,
@@ -95,29 +106,49 @@ def train_baseline_default() -> None:
         clf = clf
     )
 
-    # print("Class distribution in training data (After SMOTE):")
-    # print(y_train.value_counts())
-    # print("\nClass proportions (After SMOTE):")
-    # print(y_train.value_counts(normalize=True))
-    
-    # pipe = Pipeline(
-    #     steps = [
-    #         ("preprocessor", preprocessor),
-    #         ("classifier", clf),
-    #     ]
-    # )
+    with mlflow.start_run(run_name="default_logreg_wout_smote"):
 
-    pipe.fit(X_train,y_train)
+        mlflow.log_param("model_type", "LogisticRegression")
+        mlflow.log_param("class_weight", "balanced")
+        mlflow.log_param("use_smote", True)
+        mlflow.log_param("test_size", model_cfg["test_size"])
+        mlflow.log_param("random_state", model_cfg["random_state"])
+        mlflow.log_param("numeric_features", ",".join(data_cfg["numeric_features"]))
+        mlflow.log_param("categorical_features", ",".join(data_cfg["categorical_features"]))
 
-    y_prob = pipe.predict_proba(X_test)[:,1]
-    y_pred = (y_prob >= 0.5).astype(int)
-    auc = roc_auc_score(y_test, y_prob)
-    print(f"Baseline Logistic Regression ROC-AUC: {auc:.4f}")
-    acc = accuracy_score(y_test, y_pred)
-    print(f"Baseline Logistic Regression Accuracy: {acc:.4f}")
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred))
+        pipe.fit(X_train,y_train)
 
+        
+        y_prob = pipe.predict_proba(X_test)[:,1]
+        y_pred = (y_prob >= 0.5).astype(int)
+        auc = roc_auc_score(y_test, y_prob)
+        acc = accuracy_score(y_test, y_pred)
+
+        print(f"Baseline Logistic Regression ROC-AUC: {auc:.4f}")
+        print(f"Baseline Logistic Regression Accuracy: {acc:.4f}")
+        print("Classification Report:")
+        print(classification_report(y_test, y_pred))
+
+        mlflow.log_metric("roc_auc", auc)
+        mlflow.log_metric("accuracy", acc)
+
+
+        prec, rec, f1, _ = precision_recall_fscore_support(
+            y_test, y_pred, average="binary", pos_label=1
+        )
+        mlflow.log_metric("precision_default", prec)
+        mlflow.log_metric("recall_default", rec)
+        mlflow.log_metric("f1_default", f1)
+
+        mlflow.sklearn.log_model(
+        pipe,
+        artifact_path="model",
+        registered_model_name=None,  # you can use a name if you want a registry
+        )
+
+
+        joblib.dump(pipe, DEFAULT_MODEL_FILE)
+        print(f"Saved baseline default model to {DEFAULT_MODEL_FILE}")
 
 
 if __name__ == "__main__": 
